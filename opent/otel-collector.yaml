@@ -1,0 +1,15 @@
+receivers:
+  jaeger:
+    protocols:
+      thrift_http:
+exporters:
+  otlp:
+    endpoint: https://10.128.0.14:4317
+    insecure: true
+    headers:
+      x-scope-orgid: foo-bar-baz
+service:
+  pipelines:
+    traces:
+      receivers: [jaeger]
+      exporters: [otlp]

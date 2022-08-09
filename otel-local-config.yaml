@@ -1,0 +1,36 @@
+receivers:
+  jaeger:
+    protocols:
+      thrift_http:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  zipkin:
+
+exporters:
+ 
+  otlp:
+    endpoint: http://10.128.0.14:4317
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+    headers:
+      x-scope-orgid: foo-bar-baz
+extensions:
+ health_check:
+ pprof:
+   endpoint: 0.0.0.0:1888
+ zpages:
+   endpoint: 0.0.0.0:55679
+service:
+ extensions: [pprof, zpages, health_check]
+ telemetry:
+    logs:
+      level: "debug"
+ pipelines:
+    traces:
+      receivers: [jaeger, otlp, zipkin]
+      exporters: [otlp]

@@ -1,0 +1,8 @@
+version: "3"
+services:
+
+    otel-collector:
+      image: otel/opentelemetry-collector:0.32.0
+      command: [ "--config=/home/diego/spring-petclinic/opent/otel-collector.yaml" ]
+      volumes:
+        - ./otel-collector.multitenant.yaml:/etc/otel-collector.yaml

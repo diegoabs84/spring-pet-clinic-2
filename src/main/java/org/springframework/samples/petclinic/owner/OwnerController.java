@@ -34,7 +34,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 /**
  * @author Juergen Hoeller
  * @author Ken Krebs
@@ -43,6 +49,8 @@ import org.springframework.web.servlet.ModelAndView;
  */
 @Controller
 class OwnerController {
+        
+        private static final Logger LOGGER = LoggerFactory.getLogger(OwnerController.class);
 
 	private static final String VIEWS_OWNER_CREATE_OR_UPDATE_FORM = "owners/createOrUpdateOwnerForm";
 
@@ -64,24 +72,39 @@ class OwnerController {
 
 	@GetMapping("/owners/new")
 	public String initCreationForm(Map<String, Object> model) {
-		Owner owner = new Owner();
-		model.put("owner", owner);
-		return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
-	}
+         
+		
+	     Owner owner = new Owner();
+             model.put("owner", owner);
+             return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 
+
+
+
+
+
+	}
 	@PostMapping("/owners/new")
 	public String processCreationForm(@Valid Owner owner, BindingResult result) {
-		if (result.hasErrors()) {
-			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
+		
+
+			LOGGER.info("Creating new owner");
+		
+			if (result.hasErrors()) {
+				return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
-		else {
-			this.owners.save(owner);
-			return "redirect:/owners/" + owner.getId();
+			else {
+				this.owners.save(owner);
+				return "redirect:/owners/" + owner.getId();
 		}
 	}
 
 	@GetMapping("/owners/find")
 	public String initFindForm(Map<String, Object> model) {
+          
+	  
+	
+		LOGGER.info("Looking for owner");
 		model.put("owner", new Owner());
 		return "owners/findOwners";
 	}
@@ -89,31 +112,35 @@ class OwnerController {
 	@GetMapping("/owners")
 	public String processFindForm(@RequestParam(defaultValue = "1") int page, Owner owner, BindingResult result,
 			Model model) {
+		
+	
+			LOGGER.info("Searching for owner");
 
 		// allow parameterless GET request for /owners to return all records
-		if (owner.getLastName() == null) {
-			owner.setLastName(""); // empty string signifies broadest possible search
-		}
-
+			if (owner.getLastName() == null) {
+				owner.setLastName(""); // empty string signifies broadest possible search
+			}
+	
 		// find owners by last name
-		Page<Owner> ownersResults = findPaginatedForOwnersLastName(page, owner.getLastName());
-		if (ownersResults.isEmpty()) {
+			Page<Owner> ownersResults = findPaginatedForOwnersLastName(page, owner.getLastName());
+			if (ownersResults.isEmpty()) {
 			// no owners found
-			result.rejectValue("lastName", "notFound", "not found");
-			return "owners/findOwners";
-		}
-		else if (ownersResults.getTotalElements() == 1) {
+				result.rejectValue("lastName", "notFound", "not found");
+				return "owners/findOwners";
+			}
+			else if (ownersResults.getTotalElements() == 1) {
 			// 1 owner found
-			owner = ownersResults.iterator().next();
-			return "redirect:/owners/" + owner.getId();
-		}
-		else {
+				owner = ownersResults.iterator().next();
+				return "redirect:/owners/" + owner.getId();
+			}
+			else {
 			// multiple owners found
-			return addPaginationModel(page, model, ownersResults);
-		}
+				return addPaginationModel(page, model, ownersResults);
+			}
 	}
 
 	private String addPaginationModel(int page, Model model, Page<Owner> paginated) {
+
 		model.addAttribute("listOwners", paginated);
 		List<Owner> listOwners = paginated.getContent();
 		model.addAttribute("currentPage", page);
@@ -133,6 +160,7 @@ class OwnerController {
 
 	@GetMapping("/owners/{ownerId}/edit")
 	public String initUpdateOwnerForm(@PathVariable("ownerId") int ownerId, Model model) {
+
 		Owner owner = this.owners.findById(ownerId);
 		model.addAttribute(owner);
 		return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
@@ -141,6 +169,7 @@ class OwnerController {
 	@PostMapping("/owners/{ownerId}/edit")
 	public String processUpdateOwnerForm(@Valid Owner owner, BindingResult result,
 			@PathVariable("ownerId") int ownerId) {
+
 		if (result.hasErrors()) {
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
@@ -158,6 +187,7 @@ class OwnerController {
 	 */
 	@GetMapping("/owners/{ownerId}")
 	public ModelAndView showOwner(@PathVariable("ownerId") int ownerId) {
+
 		ModelAndView mav = new ModelAndView("owners/ownerDetails");
 		Owner owner = this.owners.findById(ownerId);
 		mav.addObject(owner);
